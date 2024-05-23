@@ -1,0 +1,114 @@
+
+1. Find all the topics and tasks which are taught in the month of October
+
+
+Query:
+
+
+db.topics.find({
+    "date_taught": {
+        $gte: new Date("01-10-2023"),
+        $lt: new Date("01-11-2023")
+    }
+});
+
+db.tasks.find({
+    "date_assigned": {
+        $gte: new Date("01-10-2023"),
+        $lt: new Date("01-11-2023")
+    }
+});
+
+2. Find all the company drives which appeared between 15 oct-2020 and 31-oct-2020
+
+
+Query:
+
+
+db.company_drives.find({
+    "date": {
+        $gte: new Date("15-10-2020"),
+        $lt: new Date("01-11-2020")
+    }
+});
+
+
+3. Find all the company drives and students who are appeared for the placement.
+
+Query:
+
+
+db.company_drives.aggregate([
+    {
+        $lookup: {
+            from: "users",
+            localField: "students_appeared",
+            foreignField: "_id",
+            as: "students"
+        }
+    }
+]);
+
+
+4. Find the number of problems solved by the user in codekata
+
+
+Query:
+
+db.codekata.aggregate([
+    {
+        $group: {
+            _id: "$user_id",
+            total_problems_solved: { $sum: "$problems_solved" }
+        }
+    }
+]);
+
+
+5. Find all the mentors with who has the mentee's count more than 15
+
+
+Query:
+
+db.mentors.find({
+    $where: "this.mentees.length > 15"
+});
+
+
+
+6. Find the number of users who are absent and task is not submitted  between 15 oct-2020 and 31-oct-2020
+
+
+Query:
+
+db.attendance.aggregate([
+    {
+        $match: {
+            date: { $gte: new Date("15-10-2020"), $lt: new Date("01-11-2020") },
+            status: "absent"
+        }
+    },
+    {
+        $lookup: {
+            from: "tasks",
+            localField: "user_id",
+            foreignField: "user_id",
+            as: "tasks"
+        }
+    },
+    {
+        $unwind: "$tasks"
+    },
+    {
+        $match: {
+            "tasks.date_assigned": { $gte: new Date("15-10-2020"), $lt: new Date("01-11-2020") },
+            "tasks.submitted": false
+        }
+    },
+    {
+        $group: {
+            _id: "$user_id",
+            count: { $sum: 1 }
+        }
+    }
+]);
